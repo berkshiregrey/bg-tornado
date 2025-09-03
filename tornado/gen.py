@@ -241,7 +241,7 @@ def coroutine(
                     future_set_result_unless_cancelled(
                         future, _value_from_stopiteration(e)
                     )
-                except Exception:
+                except (Exception, asyncio.CancelledError):
                     future_set_exc_info(future, sys.exc_info())
                 else:
                     # Provide strong references to Runner objects as long
@@ -544,7 +544,7 @@ def multi_future(
             for f in children_futs:
                 try:
                     result_list.append(f.result())
-                except Exception as e:
+                except (Exception, asyncio.CancelledError) as e:
                     if future.done():
                         if not isinstance(e, quiet_exceptions):
                             app_log.error(
@@ -781,7 +781,7 @@ class Runner:
                 try:
                     try:
                         value = future.result()
-                    except Exception as e:
+                    except (Exception, asyncio.CancelledError) as e:
                         # Save the exception for later. It's important that
                         # gen.throw() not be called inside this try/except block
                         # because that makes sys.exc_info behave unexpectedly.
@@ -809,7 +809,7 @@ class Runner:
                     )
                     self.result_future = None  # type: ignore
                     return
-                except Exception:
+                except (Exception, asyncio.CancelledError) as e:
                     self.finished = True
                     self.future = _null_future
                     future_set_exc_info(self.result_future, sys.exc_info())
